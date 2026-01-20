@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SystemPulse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #39FF14; /* Neon Green */
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            /* Flexbox support for old Android 4.2 */
+            display: -webkit-box;
+            display: -webkit-flex;
+            -webkit-box-orient: vertical;
+            -webkit-box-align: center;
+            -webkit-box-pack: center;
+        }
+        h1 {
+            border-bottom: 2px solid #39FF14;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .info {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .stats-container {
+            width: 100%;
+            max-width: 400px;
+        }
+        .stat-item {
+            margin-bottom: 30px;
+        }
+        .label {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .value {
+            font-size: 4em;
+            font-weight: bold;
+        }
+        /* New class for side-by-side numbers */
+        .split-value {
+            font-size: 3em; /* Slightly smaller to fit two in a row */
+            font-weight: bold;
+        }
+        .progress-bar-bg {
+            background-color: #111;
+            border: 1px solid #39FF14;
+            height: 30px;
+            width: 100%;
+            margin-top: 10px;
+            position: relative;
+        }
+        .progress-bar-fill {
+            background-color: #39FF14;
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            line-height: 30px;
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>SystemPulse</h1>
+    
+    <div class="info">
+        <div id="cpu-name">Fetching CPU...</div>
+        <div id="os-name">Fetching OS...</div>
+    </div>
+
+    <div class="stats-container">
+        
+        <div class="stat-item" style="display: flex; justify-content: space-between;">
+            <div style="text-align: center; width: 48%;">
+                <div class="label">CPU LOAD</div>
+                <div id="cpu-load" class="split-value">0%</div>
+            </div>
+            
+            <div style="text-align: center; width: 48%;">
+                <div class="label">CPU TEMP</div>
+                <div id="cpu-temp" class="split-value" style="color: #ff5555;">--°C</div>
+            </div>
+        </div>
+
+        <div class="stat-item">
+            <div class="label" style="text-align: center;">RAM USAGE</div>
+            <div class="progress-bar-bg">
+                <div id="ram-fill" class="progress-bar-fill"></div>
+                <div id="ram-text" class="progress-text">0%</div>
+            </div>
+            <div id="ram-details" style="margin-top: 5px; font-size: 0.9em; text-align: center;">0GB / 0GB</div>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // ES5 compatible JS for Android 4.2
+        var socket = io();
+
+        var cpuNameEl = document.getElementById('cpu-name');
+        var osNameEl = document.getElementById('os-name');
+        var cpuLoadEl = document.getElementById('cpu-load');
+        var cpuTempEl = document.getElementById('cpu-temp'); // <--- NEW
+        var ramFillEl = document.getElementById('ram-fill');
+        var ramTextEl = document.getElementById('ram-text');
+        var ramDetailsEl = document.getElementById('ram-details');
+
+        socket.on('stats', function(data) {
+            cpuNameEl.innerHTML = data.cpu;
+            osNameEl.innerHTML = data.os;
+            
+            cpuLoadEl.innerHTML = data.cpuLoad + '%';
+            
+            // Update Temp (Handle N/A case)
+            if (data.cpuTemp && data.cpuTemp !== 'N/A') {
+                cpuTempEl.innerHTML = data.cpuTemp + '°C';
+            } else {
+                cpuTempEl.innerHTML = 'N/A';
+            }
+            
+            ramFillEl.style.width = data.memPercent + '%';
+            ramTextEl.innerHTML = data.memPercent + '%';
+            ramDetailsEl.innerHTML = data.memUsed + 'GB / ' + data.memTotal + 'GB';
+        });
+
+        socket.on('connect_error', function() {
+            console.log('Connection Failed');
+        });
+    </script>
+</body>
+</html>
